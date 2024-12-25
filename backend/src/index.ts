@@ -11,50 +11,58 @@ wss.on("connection", function connection(ws) {
   ws.on("message", function message(data: any) {
     const message = JSON.parse(data);
 
-    //identify sender and reciever
-    if (message.type === "sender") {
-      senderSocket = ws;
-    } else if (message.type === "receiver") {
-      receiverSocket = ws;
-    }
+    switch (message.type) {
+      //identify the sender and receiver
+      case "sender":
+        senderSocket = ws;
+        break;
 
-    //create offer
-    else if (message.type === "createOffer") {
-      if (ws !== senderSocket) {
-        ws.send("You are not authorized to create offer");
-        return;
-      }
-      receiverSocket?.send(
-        JSON.stringify({ type: "createOffer", sdp: message.sdp })
-      );
-    }
+      case "receiver":
+        receiverSocket = ws;
+        break;
 
-    //create answer
-    else if (message.type === "createAnswer") {
-      if (ws !== receiverSocket) {
-        ws.send("You are not authorized to create Answer");
-        return;
-      }
-      senderSocket?.send(JSON.stringify({ type: "createAnswer" }));
-    }
-
-    //add ice candidate
-    else if (message.type === "iceCandidate") {
-      if (ws === senderSocket) {
+      //create offer and answer
+      case "createOffer":
+        if (ws !== senderSocket) {
+          ws.send("You are not authorized to create offer");
+          return;
+        }
         receiverSocket?.send(
-          JSON.stringify({
-            type: "iceCandidate",
-            candidate: message.candidate,
-          })
+          JSON.stringify({ type: "createOffer", sdp: message.sdp })
         );
-      } else if (ws === receiverSocket) {
-        senderSocket?.send(
-          JSON.stringify({
-            type: "iceCandidate",
-            candidate: message.candidate,
-          })
-        );
-      }
+        break;
+
+      case "createAnswer":
+        if (ws !== receiverSocket) {
+          ws.send("You are not authorized to create Answer");
+          return;
+        }
+        senderSocket?.send(JSON.stringify({ type: "createAnswer" }));
+        break;
+
+      //send ice candidate
+      case "iceCandidate":
+        if (ws === senderSocket) {
+          receiverSocket?.send(
+            JSON.stringify({
+              type: "iceCandidate",
+              candidate: message.candidate,
+            })
+          );
+        } else if (ws === receiverSocket) {
+          senderSocket?.send(
+            JSON.stringify({
+              type: "iceCandidate",
+              candidate: message.candidate,
+            })
+          );
+        }
+        break;
+
+      default:
+        // Handle any unrecognized message types
+        console.warn(`Unhandled message type: ${message.type}`);
+        break;
     }
   });
 
