@@ -15,10 +15,12 @@ wss.on("connection", function connection(ws) {
       //identify the sender and receiver
       case "sender":
         senderSocket = ws;
+        console.log("Sender Connected");
         break;
 
       case "receiver":
         receiverSocket = ws;
+        console.log("Receiver Connected");
         break;
 
       //create offer and answer
@@ -30,6 +32,7 @@ wss.on("connection", function connection(ws) {
         receiverSocket?.send(
           JSON.stringify({ type: "createOffer", sdp: message.sdp })
         );
+        console.log("Offer Sent");
         break;
 
       case "createAnswer":
@@ -37,7 +40,10 @@ wss.on("connection", function connection(ws) {
           ws.send("You are not authorized to create Answer");
           return;
         }
-        senderSocket?.send(JSON.stringify({ type: "createAnswer" }));
+        senderSocket?.send(
+          JSON.stringify({ type: "createAnswer", sdp: message.sdp })
+        );
+        console.log("Answer Sent");
         break;
 
       //send ice candidate
